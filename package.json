@@ -1,0 +1,14 @@
+{
+  "name": "ipcheck-static",
+  "version": "1.0.0",
+  "description": "Static version of IPcheck",
+  "scripts": {
+    "dev": "npx http-server -c-1 -o"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
