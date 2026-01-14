@@ -531,16 +531,16 @@ const App = () => {
 
             <section className="mb-8 animate-slide-up" style={{ animationDelay: '100ms' }}>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                    <PingCard index={0} name="Bilibili" url="https://i0.hdslb.com/bfs/face/member/noface.jpg" icon="https://www.bilibili.com/favicon.ico" />
-                    <PingCard index={1} name="WeChat" url="https://res.wx.qq.com/a/wx_fed/assets/res/NTI4MWU5.ico" icon="https://res.wx.qq.com/a/wx_fed/assets/res/NTI4MWU5.ico" />
-                    <PingCard index={2} name="Google" url="https://www.google.com/favicon.ico" icon="https://www.google.com/favicon.ico" />
-                    <PingCard index={3} name="Cloudflare" url="https://www.cloudflare.com/favicon.ico" icon="https://www.cloudflare.com/favicon.ico" />
-                    <PingCard index={4} name="GitHub" url="https://github.github.io/janky/images/bg_hr.png" icon="https://github.com/favicon.ico" />
-                    <PingCard index={5} name="YouTube" url="https://i.ytimg.com/vi/M7lc1UVf-VE/mqdefault.jpg" icon="https://www.youtube.com/favicon.ico" />
-                    <PingCard index={6} name="OpenAI" url="https://openai.com/favicon.ico" icon="https://openai.com/favicon.ico" />
-                    <PingCard index={7} name="Telegram" url="https://telegram.org/img/t_logo.png" icon="https://telegram.org/favicon.ico" />
-                    <PingCard index={8} name="Netflix" url="https://assets.nflxext.com/us/ffe/siteui/common/icons/nficon2016.ico" icon="https://assets.nflxext.com/us/ffe/siteui/common/icons/nficon2016.ico" />
-                    <PingCard index={9} name="Apple" url="https://www.apple.com/favicon.ico" icon="https://www.apple.com/favicon.ico" />
+                    <PingCard index={0} name="Bilibili" url="https://i0.hdslb.com/bfs/face/member/noface.jpg" icon="static/icons/bilibili.ico" />
+                    <PingCard index={1} name="WeChat" url="https://res.wx.qq.com/a/wx_fed/assets/res/NTI4MWU5.ico" icon="static/icons/wechat.ico" />
+                    <PingCard index={2} name="Google" url="https://www.google.com/favicon.ico" icon="static/icons/google.ico" />
+                    <PingCard index={3} name="Cloudflare" url="https://www.cloudflare.com/favicon.ico" icon="static/icons/cloudflare.ico" />
+                    <PingCard index={4} name="GitHub" url="https://github.github.io/janky/images/bg_hr.png" icon="static/icons/github.ico" />
+                    <PingCard index={5} name="YouTube" url="https://i.ytimg.com/vi/M7lc1UVf-VE/mqdefault.jpg" icon="static/icons/youtube.ico" />
+                    <PingCard index={6} name="OpenAI" url="https://openai.com/favicon.ico" icon="static/icons/openai.ico" />
+                    <PingCard index={7} name="Telegram" url="https://telegram.org/img/t_logo.png" icon="static/icons/telegram.ico" />
+                    <PingCard index={8} name="Netflix" url="https://assets.nflxext.com/us/ffe/siteui/common/icons/nficon2016.ico" icon="static/icons/netflix.ico" />
+                    <PingCard index={9} name="Apple" url="https://www.apple.com/favicon.ico" icon="static/icons/apple.ico" />
                 </div>
             </section>
 
