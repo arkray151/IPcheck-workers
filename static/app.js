@@ -309,9 +309,8 @@ const IpCard = ({ title, type, delay = 0, accent, cfIp }) => {
                         }
                     }
                 } else if (type === 'foreign') {
-                    const r = await fetch('https://ipapi.co/json/');
-                    const j = await r.json();
-                    ip = j.ip;
+                    const r = await fetch('https://api.ipify.org/');
+                    ip = await r.text();
                 } else if (type === 'cloudflare') {
                     // Use the IP passed from the Cloudflare Trace API
                     ip = cfIp;
