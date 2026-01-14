@@ -1,12 +1,21 @@
 body { 
     background-color: #f0f4f8;
     background-image: 
-    linear-gradient(rgba(200, 200, 200, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(200, 200, 200, 0.1) 1px, transparent 1px);
+        linear-gradient(rgba(200, 200, 200, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(200, 200, 200, 0.1) 1px, transparent 1px);
     background-size: 30px 30px;
     min-height: 100vh;
     color: #0f172a;
     overflow-x: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body.dark {
+    background-color: #0f172a;
+    color: #f8fafc;
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
 }
 
 .glass-card {
@@ -15,9 +24,19 @@ body {
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.8);
     box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.02),
-    0 2px 4px -1px rgba(0, 0, 0, 0.02),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+        0 4px 6px -1px rgba(0, 0, 0, 0.02),
+        0 2px 4px -1px rgba(0, 0, 0, 0.02),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.dark .glass-card {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 
+        0 4px 6px -1px rgba(0, 0, 0, 0.2),
+        0 2px 4px -1px rgba(0, 0, 0, 0.1),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .scan-line {
@@ -31,6 +50,11 @@ body {
     animation: scan 6s infinite;
     pointer-events: none;
 }
+
+.dark .scan-line {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+}
+
 @keyframes scan {
     0%, 50% { left: -100%; }
     100% { left: 200%; }

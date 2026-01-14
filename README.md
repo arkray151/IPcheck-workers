@@ -35,7 +35,7 @@
 
 由于是纯静态页面，部署非常简单：
 
-#### Cloudflare Pages (推荐)
+#### Cloudflare Pages (纯静态 - 推荐)
 1.  进入 Cloudflare Dashboard -> **Workers & Pages** -> **Create Application** -> **Pages** -> **Connect to Git**。
 2.  选择本仓库。
 3.  **Build settings** (构建设置)：
@@ -43,6 +43,19 @@
     -   **Build command**: (留空)
     -   **Output directory**: `.` (或者留空，即根目录)
 4.  点击 **Save and Deploy**。
+
+#### Cloudflare Workers (单脚本部署)
+本项目保留了 Worker 版本及兼容性，支持直接作为 Worker 运行：
+1.  将项目根目录下的 `_worker.js.bak` 重命名为 `_worker.js`。
+2.  **方式一：使用 Wrangler 命令行**
+    ```bash
+    npx wrangler deploy _worker.js --name ipcheck
+    ```
+3.  **方式二：Cloudflare Dashboard**
+    - 创建一个新的 Worker 服务。
+    - 点击 "Edit code" 进入在线编辑器。
+    - 将 `_worker.js` 的内容完整复制粘贴进去。
+    - 点击 "Save and Deploy"。
 
 #### GitHub Pages / Vercel / Netlify
 -   直接部署根目录即可。

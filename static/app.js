@@ -1,7 +1,6 @@
 const { useState, useEffect, useRef } = React;
 const { createRoot } = ReactDOM;
 
-// --- Helper Hook for Cloudflare Trace ---
 // --- Helper Hook for Data Fetching ---
 const useIpData = () => {
     const [data, setData] = useState({
@@ -25,7 +24,7 @@ const useIpData = () => {
                     ...prev,
                     ip: json.ip,
                     loc: `${json.city || ''}, ${json.country || ''}`,
-                    colo: json.region_code || 'N/A', // ip.sb doesn't give colo code, use region code or something else
+                    colo: json.region_code || 'N/A',
                     isp: json.organization || json.isp || 'Unknown',
                     country: json.country || 'Unknown',
                     asn: json.asn || '0',
@@ -33,7 +32,7 @@ const useIpData = () => {
             })
             .catch(err => {
                 console.error("IP.sb GeoIP failed", err);
-                // Fallback to ipapi.co if ip.sb fails
+                // Fallback to ipapi.co
                 fetch('https://ipapi.co/json/')
                     .then(res => res.json())
                     .then(json => {
@@ -48,8 +47,7 @@ const useIpData = () => {
                     .catch(e => setData(prev => ({ ...prev, ip: 'Error' })));
             });
 
-        // 2. Try to get Connection Info (Protocol, TLS) from Cloudflare Trace
-        // Note: This might fail due to CORS on localhost.
+        // 2. Try to get Connection Info from Cloudflare Trace
         fetch('https://www.cloudflare.com/cdn-cgi/trace')
             .then(res => res.text())
             .then(text => {
@@ -64,16 +62,14 @@ const useIpData = () => {
                     http: result.http || 'HTTP/1.1',
                     tls: result.tls || 'Unknown',
                     visit_scheme: result.visit_scheme || 'https',
-                    // Only overwrite colo if we got it from trace (more accurate for CF colo)
                     colo: result.colo || prev.colo
                 }));
             })
             .catch(err => {
                 console.log("Trace failed (likely CORS), using defaults");
-                // Fallback defaults
                 setData(prev => ({
                     ...prev,
-                    http: window.location.protocol === 'https:' ? 'HTTP/2' : 'HTTP/1.1', // Guess
+                    http: window.location.protocol === 'https:' ? 'HTTP/2' : 'HTTP/1.1',
                     tls: window.location.protocol === 'https:' ? 'TLS 1.2+' : 'None'
                 }));
             });
@@ -103,8 +99,6 @@ const Sparkline = ({ data, color, width = 100, height = 30 }) => {
     }).join(' ');
 
     const strokeColor = color === 'green' ? '#10b981' : (color === 'yellow' ? '#f59e0b' : '#f43f5e');
-    // Using explicit fill=none for path to avoid black fill default in some browsers if not set, 
-    // though the fill prop below handles the gradient.
 
     return (
         <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="overflow-visible">
@@ -136,7 +130,6 @@ const PingCard = ({ name, url, icon, index }) => {
             };
             img.onload = update;
             img.onerror = update;
-            // Add cache buster
             img.src = `${url}?t=${Date.now()}`;
         };
         const t1 = setTimeout(ping, index * 200);
@@ -145,6 +138,7 @@ const PingCard = ({ name, url, icon, index }) => {
     }, [url]);
 
     const statusColor = !ms ? 'gray' : (ms < 100 ? 'green' : (ms < 300 ? 'yellow' : 'red'));
+    const colorName = statusColor === 'green' ? 'emerald' : statusColor === 'yellow' ? 'amber' : (statusColor === 'red' ? 'rose' : 'gray');
 
     return (
         <div
@@ -152,14 +146,14 @@ const PingCard = ({ name, url, icon, index }) => {
             style={{ animationDelay: `${index * 50}ms` }}
         >
             <div className="flex items-center gap-3 z-10">
-                <div className="w-8 h-8 rounded-full bg-white/50 border border-white flex items-center justify-center shadow-sm">
+                <div className="w-8 h-8 rounded-full bg-white/50 dark:bg-slate-800/80 border border-white dark:border-slate-700 flex items-center justify-center shadow-sm transition-colors">
                     <img src={icon} className="w-5 h-5 object-contain" />
                 </div>
                 <div>
-                    <div className="text-[11px] font-bold text-gray-700 leading-tight">{name}</div>
-                    <div className={`text-[10px] font-mono font-bold ${statusColor === 'green' ? 'text-emerald-600' :
-                        statusColor === 'yellow' ? 'text-amber-600' :
-                            statusColor === 'red' ? 'text-rose-600' : 'text-gray-400'
+                    <div className="text-[11px] font-bold text-gray-700 dark:text-slate-200 leading-tight transition-colors">{name}</div>
+                    <div className={`text-[10px] font-mono font-bold ${statusColor === 'green' ? 'text-emerald-600 dark:text-emerald-400' :
+                        statusColor === 'yellow' ? 'text-amber-600 dark:text-amber-400' :
+                            statusColor === 'red' ? 'text-rose-600 dark:text-rose-400' : 'text-gray-400 dark:text-gray-500'
                         }`}>
                         {ms ? `${ms}ms` : 'Waiting...'}
                     </div>
@@ -168,19 +162,18 @@ const PingCard = ({ name, url, icon, index }) => {
             <div className="w-16 h-8 opacity-60 group-hover:opacity-100 transition-opacity z-10">
                 <Sparkline data={history} color={statusColor} />
             </div>
-            <div className={`absolute right-0 top-0 w-16 h-full bg-gradient-to-l from-${statusColor === 'green' ? 'emerald' : statusColor === 'yellow' ? 'amber' : 'rose'
-                }-50/50 to-transparent pointer-events-none`} />
+            <div className={`absolute right-0 top-0 w-28 h-full bg-gradient-to-l from-${colorName}-50/50 dark:from-${colorName}-500/10 to-transparent pointer-events-none`} />
         </div>
     );
 };
 
 const RiskReport = ({ data, loading }) => {
     if (loading) return (
-        <div className="mt-4 p-4 border border-dashed border-gray-200 rounded-xl bg-gray-50/50 animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+        <div className="mt-4 p-4 border border-dashed border-gray-200 dark:border-slate-700 rounded-xl bg-gray-50/50 dark:bg-slate-800/50 animate-pulse">
+            <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-1/4 mb-4"></div>
             <div className="space-y-2">
-                <div className="h-2 bg-gray-200 rounded w-full"></div>
-                <div className="h-2 bg-gray-200 rounded w-5/6"></div>
+                <div className="h-2 bg-gray-200 dark:bg-slate-700 rounded w-full"></div>
+                <div className="h-2 bg-gray-200 dark:bg-slate-700 rounded w-5/6"></div>
             </div>
         </div>
     );
@@ -191,20 +184,20 @@ const RiskReport = ({ data, loading }) => {
     const asnScore = extractScore(data.asn?.abuser_score);
 
     const InfoRow = ({ label, value, sub }) => (
-        <div className="flex flex-col py-1.5 border-b border-gray-100/50 last:border-0">
-            <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">{label}</span>
-            <span className="text-xs font-medium text-gray-700 break-all">{value || 'N/A'}</span>
-            {sub && <span className="text-[10px] text-gray-400">{sub}</span>}
+        <div className="flex flex-col py-1.5 border-b border-gray-100/50 dark:border-slate-700/50 last:border-0">
+            <span className="text-[10px] text-gray-400 dark:text-slate-500 uppercase font-bold tracking-wider">{label}</span>
+            <span className="text-xs font-medium text-gray-700 dark:text-slate-300 break-all">{value || 'N/A'}</span>
+            {sub && <span className="text-[10px] text-gray-400 dark:text-slate-500">{sub}</span>}
         </div>
     );
 
     const Tag = ({ type, active, text }) => {
         if (!active) return null;
         const colors = {
-            bad: 'bg-rose-50 text-rose-600 border-rose-100',
-            good: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-            warn: 'bg-amber-50 text-amber-600 border-amber-100',
-            neutral: 'bg-gray-50 text-gray-500 border-gray-100'
+            bad: 'bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900',
+            good: 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900',
+            warn: 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900',
+            neutral: 'bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-slate-400 border-gray-100 dark:border-slate-700'
         };
         return (
             <span className={`text-[10px] px-2 py-0.5 rounded border font-semibold ${colors[type]}`}>
@@ -221,20 +214,20 @@ const RiskReport = ({ data, loading }) => {
     };
 
     return (
-        <div className="mt-5 pt-4 border-t border-gray-100">
+        <div className="mt-5 pt-4 border-t border-gray-100 dark:border-slate-700 transition-colors">
             <div className="grid grid-cols-2 gap-4 mb-5">
-                <div className="bg-white/50 border border-gray-100 rounded-lg p-3 text-center relative overflow-hidden group">
+                <div className="bg-white/50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700 rounded-lg p-3 text-center relative overflow-hidden group transition-colors">
                     <div className="relative z-10">
-                        <div className="text-[10px] text-gray-400 uppercase font-bold">运营商信誉</div>
+                        <div className="text-[10px] text-gray-400 dark:text-slate-500 uppercase font-bold">运营商信誉</div>
                         <div className={`text-xl font-mono font-bold mt-1 ${companyScore > 20 ? 'text-rose-500' : 'text-emerald-500'}`}>
                             {companyScore}%
                         </div>
                     </div>
                     <div className={`absolute bottom-0 left-0 h-1 bg-current w-full opacity-20 ${companyScore > 20 ? 'text-rose-500' : 'text-emerald-500'}`}></div>
                 </div>
-                <div className="bg-white/50 border border-gray-100 rounded-lg p-3 text-center relative overflow-hidden group">
+                <div className="bg-white/50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700 rounded-lg p-3 text-center relative overflow-hidden group transition-colors">
                     <div className="relative z-10">
-                        <div className="text-[10px] text-gray-400 uppercase font-bold">ASN 信誉</div>
+                        <div className="text-[10px] text-gray-400 dark:text-slate-500 uppercase font-bold">ASN 信誉</div>
                         <div className={`text-xl font-mono font-bold mt-1 ${asnScore > 20 ? 'text-rose-500' : 'text-emerald-500'}`}>
                             {asnScore}%
                         </div>
@@ -260,18 +253,18 @@ const RiskReport = ({ data, loading }) => {
                 <InfoRow label="路由段 (Route)" value={data.asn?.route} />
                 <InfoRow label="注册局 (Registry)" value={data.asn?.registry} />
                 <InfoRow label="所属公司" value={data.company?.name} sub={data.company?.domain} />
-                <div className="col-span-2 mt-2 pt-2 border-t border-dashed border-gray-200">
+                <div className="col-span-2 mt-2 pt-2 border-t border-dashed border-gray-200 dark:border-slate-700 transition-colors">
                     <div className="flex justify-between items-center mb-1">
-                        <span className="text-[10px] text-gray-400 uppercase font-bold">地理位置详情</span>
+                        <span className="text-[10px] text-gray-400 dark:text-slate-500 uppercase font-bold">地理位置详情</span>
                         <a href={`https://www.google.com/maps/search/?api=1&query=${data.location?.latitude},${data.location?.longitude}`} target="_blank" className="text-[10px] text-blue-500 hover:underline">Open Map ↗</a>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-slate-400">
                         <div>
-                            <span className="block text-[10px] text-gray-400">城市/地区</span>
+                            <span className="block text-[10px] text-gray-400 dark:text-slate-500">城市/地区</span>
                             {data.location?.city}, {data.location?.state}
                         </div>
                         <div>
-                            <span className="block text-[10px] text-gray-400">时区 & 时间</span>
+                            <span className="block text-[10px] text-gray-400 dark:text-slate-500">时区 & 时间</span>
                             {data.location?.timezone} ({getLocalTime(data.location?.timezone)})
                         </div>
                     </div>
@@ -312,15 +305,11 @@ const IpCard = ({ title, type, delay = 0, accent, cfIp }) => {
                     const r = await fetch('https://api.ipify.org/');
                     ip = await r.text();
                 } else if (type === 'cloudflare') {
-                    // Use the IP passed from the Cloudflare Trace API
                     ip = cfIp;
                 }
 
                 if (!ip || ip === 'Loading...') {
-                    // converting "Loading..." to null for flow
-                    if (type === 'cloudflare') {
-                        return; // Wait for prop update
-                    }
+                    if (type === 'cloudflare') return;
                 }
 
                 setInfo({ ip: ip, status: 'ok' });
@@ -348,7 +337,7 @@ const IpCard = ({ title, type, delay = 0, accent, cfIp }) => {
         } else {
             init();
         }
-    }, [type, cfIp]); // Reacting to cfIp changes for the Cloudflare card
+    }, [type, cfIp]);
 
     const isErr = info.status === 'error';
     const isLoading = info.status === 'loading' || (type === 'cloudflare' && (!cfIp || cfIp === 'Loading...'));
@@ -361,26 +350,26 @@ const IpCard = ({ title, type, delay = 0, accent, cfIp }) => {
             <div className={`absolute top-0 left-0 w-full h-1 bg-${accent}-500`}></div>
             <div className="scan-line"></div>
 
-            <div className="flex justify-between items-start mb-3">
-                <h3 className={`text-xs font-bold uppercase tracking-widest flex items-center gap-2 text-${accent}-600`}>
+            <div className="flex justify-between items-start mb-3 relative z-10">
+                <h3 className={`text-xs font-bold uppercase tracking-widest flex items-center gap-2 text-${accent}-600 dark:text-${accent}-400`}>
                     <span className={`w-2 h-2 rounded-full bg-${accent}-500 shadow-neon`}></span>
                     {title}
                 </h3>
-                {isLoading && <div className="w-3 h-3 border-2 border-gray-300 border-t-transparent rounded-full animate-spin"></div>}
+                {isLoading && <div className="w-3 h-3 border-2 border-gray-300 dark:border-slate-600 border-t-transparent rounded-full animate-spin"></div>}
             </div>
 
-            <div className="mb-2">
+            <div className="mb-2 relative z-10">
                 {isLoading ? (
-                    <div className="h-8 w-3/4 bg-gray-100 rounded animate-pulse"></div>
+                    <div className="h-8 w-3/4 bg-gray-100 dark:bg-slate-700 rounded animate-pulse"></div>
                 ) : (
-                    <div className={`text-2xl font-mono font-bold tracking-tight break-all ${isErr ? 'text-rose-500' : 'text-gray-800'}`}>
+                    <div className={`text-2xl font-mono font-bold tracking-tight break-all ${isErr ? 'text-rose-500' : 'text-gray-800 dark:text-slate-100'}`}>
                         {info.ip}
                     </div>
                 )}
             </div>
 
             {!isErr && !isLoading && (
-                <div className="flex-1">
+                <div className="flex-1 relative z-10">
                     <RiskReport data={risk} loading={loadRisk} />
                 </div>
             )}
@@ -388,7 +377,7 @@ const IpCard = ({ title, type, delay = 0, accent, cfIp }) => {
     );
 };
 
-const NetworkHeader = ({ cfData }) => {
+const NetworkHeader = ({ cfData, isDark, toggleTheme }) => {
     const [conn, setConn] = useState(null);
     useEffect(() => {
         if (navigator.connection) {
@@ -404,31 +393,48 @@ const NetworkHeader = ({ cfData }) => {
         <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-slide-up">
             <div className="flex items-center gap-4">
                 <div className="relative">
-                    <div className="w-12 h-12 bg-white rounded-xl shadow-glass flex items-center justify-center text-primary relative z-10">
+                    <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-xl shadow-glass flex items-center justify-center text-primary relative z-10 transition-colors">
                         <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                     </div>
                     <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full"></div>
                 </div>
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-800 tracking-tight">IPcheck</h1>
-                    <p className="text-xs text-gray-500 font-mono flex items-center gap-2">
+                    <h1 className="text-3xl font-bold text-gray-800 dark:text-white tracking-tight transition-colors">IPcheck</h1>
+                    <p className="text-xs text-gray-500 dark:text-slate-400 font-mono flex items-center gap-2 transition-colors">
                         <span>{cfData.colo} • {cfData.loc}</span>
                     </p>
                 </div>
             </div>
-            <div className="glass-card px-4 py-2 rounded-full flex items-center gap-4 text-xs font-mono text-gray-600 shadow-sm">
-                <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse-glow"></span>
-                    <span>Protocol: {cfData.http}</span>
+            <div className="flex items-center gap-3">
+                <div className="glass-card px-4 py-2 rounded-full flex items-center gap-4 text-xs font-mono text-gray-600 dark:text-slate-300 shadow-sm transition-colors">
+                    <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse-glow"></span>
+                        <span>Protocol: {cfData.http}</span>
+                    </div>
+                    <div className="w-px h-3 bg-gray-300 dark:bg-slate-600"></div>
+                    <div>TLS: {cfData.tls}</div>
+                    {conn && conn.type && (
+                        <>
+                            <div className="w-px h-3 bg-gray-300 dark:bg-slate-600"></div>
+                            <div>Net: {conn.type.toUpperCase()} (~{conn.rtt}ms)</div>
+                        </>
+                    )}
                 </div>
-                <div className="w-px h-3 bg-gray-300"></div>
-                <div>TLS: {cfData.tls}</div>
-                {conn && conn.type && (
-                    <>
-                        <div className="w-px h-3 bg-gray-300"></div>
-                        <div>Net: {conn.type.toUpperCase()} (~{conn.rtt}ms)</div>
-                    </>
-                )}
+                <button
+                    onClick={toggleTheme}
+                    className="glass-card p-2 rounded-full text-gray-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors focus:outline-none"
+                    aria-label="Toggle Dark Mode"
+                >
+                    {isDark ? (
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                    ) : (
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    )}
+                </button>
             </div>
         </header>
     );
@@ -468,19 +474,19 @@ const Fingerprint = () => {
     if (!fp) return null;
 
     const Item = ({ label, val, icon }) => (
-        <div className="bg-gray-50/50 rounded-lg p-2.5 border border-gray-100 hover:bg-white transition-colors">
-            <div className="text-[10px] text-gray-400 uppercase font-bold mb-1 flex items-center gap-1">
+        <div className="bg-gray-50/50 dark:bg-slate-800/50 rounded-lg p-2.5 border border-gray-100 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-700 transition-colors">
+            <div className="text-[10px] text-gray-400 dark:text-slate-500 uppercase font-bold mb-1 flex items-center gap-1">
                 {icon && <span>{icon}</span>}
                 {label}
             </div>
-            <div className="text-xs font-mono text-gray-700 break-words font-medium">{val}</div>
+            <div className="text-xs font-mono text-gray-700 dark:text-slate-300 break-words font-medium">{val}</div>
         </div>
     );
 
     return (
         <div className="glass-card rounded-2xl p-6 relative overflow-hidden animate-slide-up" style={{ animationDelay: '600ms' }}>
-            <h3 className="text-sm font-bold text-gray-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.131A8 8 0 008 2.855" /></svg>
+            <h3 className="text-sm font-bold text-gray-600 dark:text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <svg className="w-4 h-4 text-gray-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.131A8 8 0 008 2.855" /></svg>
                 指纹检测
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -505,29 +511,56 @@ const DualStackCard = ({ type, color }) => {
         fetch(url).then(r => r.json()).then(d => setIp(d.ip)).catch(() => setIp('N/A'));
     }, []);
 
-    const borderColor = color === 'blue' ? 'border-blue-500' : 'border-purple-500';
-    const textColor = color === 'blue' ? 'text-blue-600' : 'text-purple-600';
+    const borderColor = color === 'blue' ? 'border-blue-500 dark:border-blue-700' : 'border-purple-500 dark:border-purple-700';
     const label = type === 'v4' ? 'IPv4 Connectivity' : 'IPv6 Connectivity';
 
     return (
         <div className={`glass-card border-l-[3px] ${borderColor} rounded-r-xl p-4 flex items-center justify-between relative overflow-hidden group`}>
             <div className="z-10">
-                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">{label}</div>
-                <div className="font-mono font-bold text-gray-800 text-sm break-all">
-                    {ip || <span className="animate-pulse bg-gray-200 text-transparent rounded">Loading IP Address...</span>}
+                <div className="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase tracking-wider mb-1">{label}</div>
+                <div className="font-mono font-bold text-gray-800 dark:text-slate-100 text-sm break-all transition-colors">
+                    {ip || <span className="animate-pulse bg-gray-200 dark:bg-slate-700 text-transparent rounded">Loading IP Address...</span>}
                 </div>
             </div>
-            <div className={`absolute -right-4 -bottom-4 w-24 h-24 bg-${color}-400/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500`}></div>
+            <div className={`absolute -right-4 -bottom-4 w-24 h-24 bg-${color}-400/10 dark:bg-${color}-500/20 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500`}></div>
         </div>
     );
 };
 
 const App = () => {
     const cfData = useIpData();
+    const [isDark, setIsDark] = useState(false);
+
+    useEffect(() => {
+        const saved = localStorage.getItem('theme');
+        const sys = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (saved === 'dark' || (!saved && sys)) {
+            setIsDark(true);
+            document.documentElement.classList.add('dark');
+            document.body.classList.add('dark');
+        } else {
+            setIsDark(false);
+            document.documentElement.classList.remove('dark');
+            document.body.classList.remove('dark');
+        }
+    }, []);
+
+    const toggleTheme = () => {
+        const next = !isDark;
+        setIsDark(next);
+        localStorage.setItem('theme', next ? 'dark' : 'light');
+        if (next) {
+            document.documentElement.classList.add('dark');
+            document.body.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+            document.body.classList.remove('dark');
+        }
+    };
 
     return (
         <div className="pt-2">
-            <NetworkHeader cfData={cfData} />
+            <NetworkHeader cfData={cfData} isDark={isDark} toggleTheme={toggleTheme} />
 
             <section className="mb-8 animate-slide-up" style={{ animationDelay: '100ms' }}>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -557,10 +590,10 @@ const App = () => {
 
             <Fingerprint />
 
-            <footer className="text-center text-gray-400 text-[10px] py-6 font-mono border-t border-gray-200/50 mt-12">
+            <footer className="text-center text-gray-400 dark:text-slate-600 text-[10px] py-6 font-mono border-t border-gray-200/50 dark:border-slate-800/50 mt-12 transition-colors">
                 <p className="flex justify-center items-center gap-2">
-                    <span><a href="https://github.com/llovely45/IPcheck-workers">IPcheck-workers</a></span>
-                    <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                    <span><a href="https://github.com/llovely45/IPcheck-workers" className="hover:text-primary dark:hover:text-primary">IPcheck-workers</a></span>
+                    <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-slate-700"></span>
                     <span>Static Version</span>
                 </p>
             </footer>
