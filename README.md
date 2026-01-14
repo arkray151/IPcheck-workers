@@ -1,14 +1,6 @@
 🌐 IPcheck - Ultimate IP Toolbox
 IPcheck 是一个基于 Cloudflare Workers 的轻量级、高性能 IP 工具箱。它集成了 IP 分析、风控检测、实时延迟测速和浏览器指纹识别功能，所有功能均封装在一个文件中，无需复杂的构建流程。
 
-![alt text](https://img.shields.io/badge/license-MIT-blue)
-
-![alt text](https://img.shields.io/badge/Platform-Cloudflare Workers-orange)
-
-![alt text](https://img.shields.io/badge/Frontend-React 18-61DAFB)
-
-![alt text](https://img.shields.io/badge/Style-Tailwind CSS-38B2AC)
-
 ✨ 核心特性
 🎨 极致 UI 设计：采用玻璃拟态 (Glassmorphism) 风格，配合流畅的入场动画、动态网格背景和 SVG 呼吸光效。
 
