@@ -26,7 +26,7 @@
                         mono: ['JetBrains Mono', 'monospace']
                     },
                     colors: {
-                        primary: '#F38020',
+                        primary: 'rgb(var(--color-primary) / <alpha-value>)',
                         surface: 'rgba(255, 255, 255, 0.9)',
                     },
                     animation: {
@@ -40,8 +40,8 @@
                             '100%': { opacity: 1, transform: 'translateY(0)' },
                         },
                         pulseGlow: {
-                            '0%, 100%': { opacity: 1, boxShadow: '0 0 0 0px rgba(16, 185, 129, 0.4)' },
-                            '50%': { opacity: 0.8, boxShadow: '0 0 0 4px rgba(16, 185, 129, 0)' },
+                            '0%, 100%': { opacity: 1, boxShadow: '0 0 0 0px rgba(var(--color-primary), 0.4)' },
+                            '50%': { opacity: 0.8, boxShadow: '0 0 0 4px rgba(var(--color-primary), 0)' },
                         },
                         dash: {
                             to: { strokeDashoffset: '1000' }
@@ -49,12 +49,18 @@
                     },
                     boxShadow: {
                         'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.05)',
-                        'neon': '0 0 10px rgba(243, 128, 32, 0.2)',
+                        'neon': '0 0 10px rgba(var(--color-primary), 0.2)',
                     }
                 }
             }
         }
     </script>
+    <style>
+        :root {
+            --color-primary: 243 128 32;
+            /* #F38020 in RGB */
+        }
+    </style>
     <link rel="stylesheet" href="static/style.css">
 </head>
 

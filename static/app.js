@@ -1,6 +1,12 @@
 const { useState, useEffect, useRef } = React;
 const { createRoot } = ReactDOM;
 
+// --- Helper Functions ---
+const hexToRgb = (hex) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? `${parseInt(result[1], 16)} ${parseInt(result[2], 16)} ${parseInt(result[3], 16)}` : null;
+};
+
 // --- Helper Hook for Data Fetching ---
 const useIpData = () => {
     const [data, setData] = useState({
@@ -152,8 +158,8 @@ const PingCard = ({ name, url, icon, index }) => {
                 <div>
                     <div className="text-[11px] font-bold text-gray-700 dark:text-slate-200 leading-tight transition-colors">{name}</div>
                     <div className={`text-[10px] font-mono font-bold ${statusColor === 'green' ? 'text-emerald-600 dark:text-emerald-400' :
-                        statusColor === 'yellow' ? 'text-amber-600 dark:text-amber-400' :
-                            statusColor === 'red' ? 'text-rose-600 dark:text-rose-400' : 'text-gray-400 dark:text-gray-500'
+                            statusColor === 'yellow' ? 'text-amber-600 dark:text-amber-400' :
+                                statusColor === 'red' ? 'text-rose-600 dark:text-rose-400' : 'text-gray-400 dark:text-gray-500'
                         }`}>
                         {ms ? `${ms}ms` : 'Waiting...'}
                     </div>
@@ -377,7 +383,92 @@ const IpCard = ({ title, type, delay = 0, accent, cfIp }) => {
     );
 };
 
-const NetworkHeader = ({ cfData, isDark, toggleTheme }) => {
+const SettingsMenu = ({ theme, setTheme, bgName, setBgName }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const menuRef = useRef(null);
+
+    // Close on click outside
+    useEffect(() => {
+        const handleClick = (e) => {
+            if (menuRef.current && !menuRef.current.contains(e.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClick);
+        return () => document.removeEventListener('mousedown', handleClick);
+    }, []);
+
+    const backgrounds = [
+        { name: 'Default', label: '默认', val: '#f0f4f8', type: 'light' },
+        { name: 'EyeGreen', label: '护眼绿', val: '#C7EDCC', type: 'light' },
+        { name: 'Warm', label: '暖色', val: '#FAF9DE', type: 'light' },
+        { name: 'Cool', label: '冷色', val: '#d6e4ff', type: 'light' },
+    ];
+
+    return (
+        <div className="relative z-50" ref={menuRef}>
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="glass-card p-2 rounded-full text-gray-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors focus:outline-none"
+                aria-label="Settings"
+            >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </button>
+
+            {isOpen && (
+                <div className="settings-menu glass-card bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-700 shadow-xl">
+                    <div className="mb-4">
+                        <h4 className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">Theme Mode</h4>
+                        <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-lg">
+                            {['light', 'auto', 'dark'].map((m) => (
+                                <button
+                                    key={m}
+                                    onClick={() => setTheme(m)}
+                                    className={`flex-1 capitalize text-xs font-semibold py-1.5 rounded-md transition-all ${theme === m
+                                            ? 'bg-white dark:bg-slate-700 text-primary shadow-sm'
+                                            : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300'
+                                        }`}
+                                >
+                                    {m}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">Background Theme</h4>
+                        <div className="flex flex-wrap gap-2">
+                            {backgrounds.map((bg) => (
+                                <button
+                                    key={bg.name}
+                                    onClick={() => setBgName(bg.name)}
+                                    className={`color-swatch ${bgName === bg.name ? 'active' : ''}`}
+                                    style={{ backgroundColor: bg.val }}
+                                    title={bg.label}
+                                >
+                                    {bgName === bg.name && (
+                                        <svg className="w-4 h-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                        <p className="text-[10px] text-gray-400 mt-2">
+                            * Effects visible in Light Mode
+                        </p>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+
+const NetworkHeader = ({ cfData, theme, setTheme, bgName, setBgName }) => {
     const [conn, setConn] = useState(null);
     useEffect(() => {
         if (navigator.connection) {
@@ -390,7 +481,7 @@ const NetworkHeader = ({ cfData, isDark, toggleTheme }) => {
     }, []);
 
     return (
-        <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-slide-up">
+        <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-slide-up relative z-50">
             <div className="flex items-center gap-4">
                 <div className="relative">
                     <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-xl shadow-glass flex items-center justify-center text-primary relative z-10 transition-colors">
@@ -420,21 +511,8 @@ const NetworkHeader = ({ cfData, isDark, toggleTheme }) => {
                         </>
                     )}
                 </div>
-                <button
-                    onClick={toggleTheme}
-                    className="glass-card p-2 rounded-full text-gray-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors focus:outline-none"
-                    aria-label="Toggle Dark Mode"
-                >
-                    {isDark ? (
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
-                    ) : (
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                        </svg>
-                    )}
-                </button>
+
+                <SettingsMenu theme={theme} setTheme={setTheme} bgName={bgName} setBgName={setBgName} />
             </div>
         </header>
     );
@@ -527,40 +605,75 @@ const DualStackCard = ({ type, color }) => {
     );
 };
 
+// Theme Definitions
+const THEMES = {
+    Default: {
+        bgBody: '#f0f4f8',
+        bgCard: 'rgba(255, 255, 255, 0.8)',
+        bgCardBorder: 'rgba(255, 255, 255, 0.8)',
+        primary: '243 128 32' // Orange
+    },
+    EyeGreen: {
+        bgBody: '#C7EDCC',
+        bgCard: 'rgba(232, 245, 233, 0.9)',
+        bgCardBorder: 'rgba(199, 237, 204, 0.5)',
+        primary: '16 185 129' // Emerald
+    },
+    Warm: {
+        bgBody: '#FAF9DE',
+        bgCard: 'rgba(255, 253, 231, 0.9)',
+        bgCardBorder: 'rgba(255, 249, 196, 0.5)',
+        primary: '245 158 11' // Amber
+    },
+    Cool: {
+        bgBody: '#d6e4ff',
+        bgCard: 'rgba(235, 246, 255, 0.9)',
+        bgCardBorder: 'rgba(191, 219, 254, 0.5)',
+        primary: '59 130 246' // Blue
+    }
+};
+
 const App = () => {
     const cfData = useIpData();
-    const [isDark, setIsDark] = useState(false);
+    const [theme, setTheme] = useState(localStorage.getItem('theme') || 'auto');
+    const [bgName, setBgName] = useState(localStorage.getItem('bgTheme') || 'Default');
 
+    // Theme Mode (Light/Dark)
     useEffect(() => {
-        const saved = localStorage.getItem('theme');
-        const sys = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (saved === 'dark' || (!saved && sys)) {
-            setIsDark(true);
-            document.documentElement.classList.add('dark');
-            document.body.classList.add('dark');
-        } else {
-            setIsDark(false);
-            document.documentElement.classList.remove('dark');
-            document.body.classList.remove('dark');
-        }
-    }, []);
+        localStorage.setItem('theme', theme);
+        const updateTheme = () => {
+            const isDark = theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                document.body.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.body.classList.remove('dark');
+            }
+        };
+        updateTheme();
 
-    const toggleTheme = () => {
-        const next = !isDark;
-        setIsDark(next);
-        localStorage.setItem('theme', next ? 'dark' : 'light');
-        if (next) {
-            document.documentElement.classList.add('dark');
-            document.body.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-            document.body.classList.remove('dark');
-        }
-    };
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const handler = () => { if (theme === 'auto') updateTheme(); };
+        mediaQuery.addEventListener('change', handler);
+        return () => mediaQuery.removeEventListener('change', handler);
+    }, [theme]);
+
+    // Background Theme Logic
+    useEffect(() => {
+        localStorage.setItem('bgTheme', bgName);
+        const config = THEMES[bgName] || THEMES['Default'];
+
+        document.documentElement.style.setProperty('--bg-body', config.bgBody);
+        document.documentElement.style.setProperty('--bg-card', config.bgCard);
+        document.documentElement.style.setProperty('--bg-card-border', config.bgCardBorder);
+        document.documentElement.style.setProperty('--color-primary', config.primary);
+
+    }, [bgName]);
 
     return (
         <div className="pt-2">
-            <NetworkHeader cfData={cfData} isDark={isDark} toggleTheme={toggleTheme} />
+            <NetworkHeader cfData={cfData} theme={theme} setTheme={setTheme} bgName={bgName} setBgName={setBgName} />
 
             <section className="mb-8 animate-slide-up" style={{ animationDelay: '100ms' }}>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -594,7 +707,7 @@ const App = () => {
                 <p className="flex justify-center items-center gap-2">
                     <span><a href="https://github.com/llovely45/IPcheck-workers" className="hover:text-primary dark:hover:text-primary">IPcheck-workers</a></span>
                     <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-slate-700"></span>
-                    <span>Static Version</span>
+                    <span>Worker Version</span>
                 </p>
             </footer>
         </div>

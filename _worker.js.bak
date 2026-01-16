@@ -16,7 +16,7 @@ export default {
 };
 
 function renderHtml() {
-    const faviconSvg = `data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23F38020%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z%22/></svg>`;
+    const faviconSvg = "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23F38020%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z%22/></svg>";
 
     return `
 <!DOCTYPE html>
@@ -42,7 +42,7 @@ function renderHtml() {
                     mono: ['JetBrains Mono', 'monospace'] 
                 },
                 colors: {
-                    primary: '#F38020',
+                    primary: 'rgb(var(--color-primary) / <alpha-value>)',
                     surface: 'rgba(255, 255, 255, 0.9)',
                 },
                 animation: {
@@ -56,8 +56,8 @@ function renderHtml() {
                         '100%': { opacity: 1, transform: 'translateY(0)' },
                     },
                     pulseGlow: {
-                        '0%, 100%': { opacity: 1, boxShadow: '0 0 0 0px rgba(16, 185, 129, 0.4)' },
-                        '50%': { opacity: 0.8, boxShadow: '0 0 0 4px rgba(16, 185, 129, 0)' },
+                        '0%, 100%': { opacity: 1, boxShadow: '0 0 0 0px rgba(var(--color-primary), 0.4)' },
+                        '50%': { opacity: 0.8, boxShadow: '0 0 0 4px rgba(var(--color-primary), 0)' },
                     },
                     dash: {
                         to: { strokeDashoffset: '1000' }
@@ -65,13 +65,17 @@ function renderHtml() {
                 },
                 boxShadow: {
                     'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.05)',
-                    'neon': '0 0 10px rgba(243, 128, 32, 0.2)',
+                    'neon': '0 0 10px rgba(var(--color-primary), 0.2)',
                 }
             }
         }
     }
     </script>
     <style>
+        :root {
+            --color-primary: 243 128 32;
+        }
+        
         body { 
             background-color: #f0f4f8;
             background-image: 
@@ -136,6 +140,48 @@ function renderHtml() {
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Settings Menu */
+        .settings-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.5rem;
+            padding: 1rem;
+            width: 280px;
+            z-index: 50;
+            border-radius: 1rem;
+            transform-origin: top right;
+            animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .color-swatch {
+            width: 1.75rem;
+            height: 1.75rem;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 2px solid transparent;
+            position: relative;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.1);
+        }
+
+        .color-swatch.active {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 2px hsl(var(--color-surface)), 0 0 0 4px rgb(var(--color-primary));
+        }
+
+        .dark .color-swatch.active {
+            box-shadow: 0 0 0 2px rgba(30, 41, 59, 1), 0 0 0 4px rgb(var(--color-primary));
+        }
     </style>
 </head>
 <body class="p-4 md:p-8 pb-24 antialiased selection:bg-orange-100 selection:text-orange-600 dark:selection:bg-orange-500/30 dark:selection:text-orange-400">
@@ -144,6 +190,17 @@ function renderHtml() {
     <script type="text/babel" data-presets="react">
     const { useState, useEffect, useRef } = React;
     const { createRoot } = ReactDOM;
+
+    // --- Helper Functions ---
+    const hexToRgb = (hex) => {
+        const result = /^#?([a-f\\d]{2})([a-f\\d]{2})([a-f\\d]{2})$/i.exec(hex);
+        return result ? \`\${parseInt(result[1], 16)} \${parseInt(result[2], 16)} \${parseInt(result[3], 16)}\` : '243 128 32';
+    };
+
+    const rgbToHex = (rgbStr) => {
+        const [r, g, b] = rgbStr.split(' ').map(Number);
+        return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    };
 
     // --- Helper Hook for Data Fetching ---
     const useIpData = () => {
@@ -522,7 +579,98 @@ function renderHtml() {
         );
     };
 
-    const NetworkHeader = ({ cfData, isDark, toggleTheme }) => {
+    const SettingsMenu = ({ theme, setTheme, color, setColor }) => {
+        const [isOpen, setIsOpen] = useState(false);
+        const menuRef = useRef(null);
+
+        // Close on click outside
+        useEffect(() => {
+            const handleClick = (e) => {
+                if (menuRef.current && !menuRef.current.contains(e.target)) {
+                    setIsOpen(false);
+                }
+            };
+            document.addEventListener('mousedown', handleClick);
+            return () => document.removeEventListener('mousedown', handleClick);
+        }, []);
+
+        const colors = [
+            { name: 'Orange', val: '243 128 32', hex: '#F38020' },
+            { name: 'Blue', val: '59 130 246', hex: '#3B82F6' },
+            { name: 'Purple', val: '147 51 234', hex: '#9333EA' },
+            { name: 'Green', val: '16 185 129', hex: '#10B981' },
+            { name: 'Pink', val: '236 72 153', hex: '#EC4899' },
+        ];
+
+        return (
+            <div className="relative z-50" ref={menuRef}>
+                <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="glass-card p-2 rounded-full text-gray-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors focus:outline-none"
+                    aria-label="Settings"
+                >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </button>
+
+                {isOpen && (
+                    <div className="settings-menu glass-card bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-700 shadow-xl">
+                        <div className="mb-4">
+                            <h4 className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">Theme Mode</h4>
+                            <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-lg">
+                                {['light', 'auto', 'dark'].map((m) => (
+                                    <button
+                                        key={m}
+                                        onClick={() => setTheme(m)}
+                                        className={\`flex-1 capitalize text-xs font-semibold py-1.5 rounded-md transition-all \${
+                                            theme === m
+                                                ? 'bg-white dark:bg-slate-700 text-primary shadow-sm'
+                                                : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300'
+                                        }\`}
+                                    >
+                                        {m}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">Theme Color</h4>
+                            <div className="flex flex-wrap gap-2">
+                                {colors.map((c) => (
+                                    <button
+                                        key={c.name}
+                                        onClick={() => setColor(c.val)}
+                                        className={\`color-swatch \${color === c.val ? 'active' : ''}\`}
+                                        style={{ backgroundColor: c.hex }}
+                                        title={c.name}
+                                    />
+                                ))}
+                                <div className="relative group">
+                                    <input 
+                                        type="color" 
+                                        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                                        value={rgbToHex(color)} 
+                                        onChange={(e) => setColor(hexToRgb(e.target.value))}
+                                    />
+                                    <div className="color-swatch flex items-center justify-center bg-gray-100 dark:bg-slate-800 text-gray-400 border border-gray-200 dark:border-slate-600">
+                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+
+    const NetworkHeader = ({ cfData, theme, setTheme, color, setColor }) => {
          const [conn, setConn] = useState(null);
          useEffect(() => {
              if (navigator.connection) {
@@ -535,7 +683,7 @@ function renderHtml() {
          }, []);
 
          return (
-             <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-slide-up">
+             <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-slide-up relative z-50">
                  <div className="flex items-center gap-4">
                      <div className="relative">
                          <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-xl shadow-glass flex items-center justify-center text-primary relative z-10 transition-colors">
@@ -565,21 +713,8 @@ function renderHtml() {
                             </>
                         )}
                      </div>
-                     <button 
-                         onClick={toggleTheme}
-                         className="glass-card p-2 rounded-full text-gray-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors focus:outline-none"
-                         aria-label="Toggle Dark Mode"
-                     >
-                         {isDark ? (
-                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                             </svg>
-                         ) : (
-                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                             </svg>
-                         )}
-                     </button>
+                     
+                     <SettingsMenu theme={theme} setTheme={setTheme} color={color} setColor={setColor} />
                  </div>
              </header>
          );
@@ -674,38 +809,42 @@ function renderHtml() {
 
     const App = () => {
         const cfData = useIpData();
-        const [isDark, setIsDark] = useState(false);
+        const [theme, setTheme] = useState(localStorage.getItem('theme') || 'auto');
+        const [color, setColor] = useState(localStorage.getItem('primaryColor') || '243 128 32');
 
         useEffect(() => {
-            const saved = localStorage.getItem('theme');
-            const sys = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            if (saved === 'dark' || (!saved && sys)) {
-                setIsDark(true);
-                document.documentElement.classList.add('dark');
-                document.body.classList.add('dark');
-            } else {
-                setIsDark(false);
-                document.documentElement.classList.remove('dark');
-                document.body.classList.remove('dark');
-            }
-        }, []);
+            localStorage.setItem('theme', theme);
+            
+            const updateTheme = () => {
+                const isDark = theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                if (isDark) {
+                    document.documentElement.classList.add('dark');
+                    document.body.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    document.body.classList.remove('dark');
+                }
+            };
 
-        const toggleTheme = () => {
-            const next = !isDark;
-            setIsDark(next);
-            localStorage.setItem('theme', next ? 'dark' : 'light');
-            if (next) {
-                document.documentElement.classList.add('dark');
-                document.body.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-                document.body.classList.remove('dark');
-            }
-        };
+            updateTheme();
+            
+            // Listen for system changes if auto
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            const handler = () => {
+                 if (theme === 'auto') updateTheme();
+            };
+            mediaQuery.addEventListener('change', handler);
+            return () => mediaQuery.removeEventListener('change', handler);
+        }, [theme]);
+
+        useEffect(() => {
+            localStorage.setItem('primaryColor', color);
+            document.documentElement.style.setProperty('--color-primary', color);
+        }, [color]);
 
         return (
             <div className="pt-2">
-                <NetworkHeader cfData={cfData} isDark={isDark} toggleTheme={toggleTheme} />
+                <NetworkHeader cfData={cfData} theme={theme} setTheme={setTheme} color={color} setColor={setColor} />
 
                 <section className="mb-8 animate-slide-up" style={{ animationDelay: '100ms' }}>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
